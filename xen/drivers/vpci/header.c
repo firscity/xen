@@ -604,7 +604,7 @@ static void cf_check cmd_write(
 {
     struct vpci_header *header = data;
 
-    if ( !is_hardware_domain(pdev->domain) )
+    if ( has_vpci_bridge(pdev->domain) )
     {
         const struct vpci *vpci = pdev->vpci;
 
@@ -647,7 +647,7 @@ static void cf_check bar_write(
     struct vpci_bar *bar = data;
     bool hi = false;
 
-    ASSERT(is_hardware_domain(pdev->domain));
+    ASSERT(!has_vpci_bridge(pdev->domain));
 
     if ( bar->type == VPCI_BAR_MEM64_HI )
     {
@@ -824,7 +824,7 @@ int vpci_init_header(struct pci_dev *pdev)
     struct vpci_header *header = &pdev->vpci->header;
     struct vpci_bar *bars = header->bars;
     int rc;
-    bool is_hwdom = is_hardware_domain(pdev->domain);
+    bool is_hwdom = !has_vpci_bridge(pdev->domain);
     uint8_t type;
 
     ASSERT(rw_is_write_locked(&pdev->domain->pci_lock));
