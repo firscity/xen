@@ -306,7 +306,7 @@ static void defer_map(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
     raise_softirq(SCHEDULE_SOFTIRQ);
 }
 
-static int modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
+int vpci_modify_bars(const struct pci_dev *pdev, uint16_t cmd, bool rom_only)
 {
     struct vpci_header *header = &pdev->vpci->header;
     struct pci_dev *tmp;
@@ -547,7 +547,7 @@ static void cf_check cmd_write(
          * memory decoding bit has not been changed, so leave everything as-is,
          * hoping the guest will realize and try again.
          */
-        modify_bars(pdev, cmd, false);
+        vpci_modify_bars(pdev, cmd, false);
     else
         pci_conf_write16(pdev->sbdf, reg, cmd);
 }
@@ -612,9 +612,9 @@ static void cf_check bar_write(
     pci_conf_write32(pdev->sbdf, reg, val);
 }
 
-static void cf_check guest_mem_bar_write(const struct pci_dev *pdev,
-                                         unsigned int reg, uint32_t val,
-                                         void *data)
+void cf_check vpci_guest_mem_bar_write(const struct pci_dev *pdev,
+                                       unsigned int reg, uint32_t val,
+                                       void *data)
 {
     struct vpci_bar *bar = data;
     bool hi = false;
@@ -654,8 +654,8 @@ static void cf_check guest_mem_bar_write(const struct pci_dev *pdev,
     bar->guest_addr = guest_addr;
 }
 
-static uint32_t cf_check guest_mem_bar_read(const struct pci_dev *pdev,
-                                            unsigned int reg, void *data)
+uint32_t cf_check vpci_guest_mem_bar_read(const struct pci_dev *pdev,
+                                          unsigned int reg, void *data)
 {
     const struct vpci_bar *bar = data;
     uint32_t reg_val;
@@ -715,13 +715,15 @@ static void cf_check rom_write(
      * Pass PCI_COMMAND_MEMORY or 0 to signal a map/unmap request, note that
      * this fabricated command is never going to be written to the register.
      */
-    else if ( modify_bars(pdev, new_enabled ? PCI_COMMAND_MEMORY : 0, true) )
+    else if ( vpci_modify_bars(pdev,
+                               new_enabled ? PCI_COMMAND_MEMORY : 0,
+                               true) )
         /*
          * No memory has been added or removed from the p2m (because the actual
          * p2m changes are deferred in defer_map) and the ROM enable bit has
          * not been changed, so leave everything as-is, hoping the guest will
          * realize and try again. It's important to not update rom->addr in the
-         * unmap case if modify_bars has failed, or future attempts would
+         * unmap case if vpci_modify_bars has failed, or future attempts would
          * attempt to unmap the wrong address.
          */
         return;
@@ -801,8 +803,8 @@ int vpci_init_header(struct pci_dev *pdev)
     /*
      * For DomUs, clear PCI_COMMAND_{MASTER,MEMORY,IO} and other
      * DomU-controllable bits in PCI_COMMAND. Devices assigned to DomUs will
-     * start with memory decoding disabled, and modify_bars() will not be called
-     * at the end of this function.
+     * start with memory decoding disabled, and vpci_modify_bars() will not be
+     * called at the end of this function.
      */
     if ( !is_hwdom )
         cmd &= ~(PCI_COMMAND_VGA_PALETTE | PCI_COMMAND_INVALIDATE |
@@ -825,8 +827,9 @@ int vpci_init_header(struct pci_dev *pdev)
             bars[i].type = VPCI_BAR_MEM64_HI;
             rc = vpci_add_register(pdev->vpci,
                                    is_hwdom ? vpci_hw_read32
-                                            : guest_mem_bar_read,
-                                   is_hwdom ? bar_write : guest_mem_bar_write,
+                                            : vpci_guest_mem_bar_read,
+                                   is_hwdom ? bar_write
+                                            : vpci_guest_mem_bar_write,
                                    reg, 4, &bars[i]);
             if ( rc )
                 goto fail;
@@ -884,8 +887,9 @@ int vpci_init_header(struct pci_dev *pdev)
         bars[i].prefetchable = val & PCI_BASE_ADDRESS_MEM_PREFETCH;
 
         rc = vpci_add_register(pdev->vpci,
-                               is_hwdom ? vpci_hw_read32 : guest_mem_bar_read,
-                               is_hwdom ? bar_write : guest_mem_bar_write,
+                               is_hwdom ? vpci_hw_read32
+                                        : vpci_guest_mem_bar_read,
+                               is_hwdom ? bar_write : vpci_guest_mem_bar_write,
                                reg, 4, &bars[i]);
         if ( rc )
             goto fail;
@@ -927,7 +931,7 @@ int vpci_init_header(struct pci_dev *pdev)
             goto fail;
     }
 
-    return (cmd & PCI_COMMAND_MEMORY) ? modify_bars(pdev, cmd, false) : 0;
+    return (cmd & PCI_COMMAND_MEMORY) ? vpci_modify_bars(pdev, cmd, false) : 0;
 
  fail:
     pci_conf_write16(pdev->sbdf, PCI_COMMAND, cmd);
