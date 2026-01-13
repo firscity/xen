@@ -676,9 +676,7 @@ static uint64_t read_pci_mem_bar(pci_sbdf_t sbdf, uint8_t bir, int vf,
         unsigned int pos;
         uint16_t ctrl, num_vf, offset, stride;
 
-        ASSERT(pf_info);
-
-        pos = pci_find_ext_capability(sbdf, PCI_EXT_CAP_ID_SRIOV);
+        pos = pci_find_ext_capability(pdev, PCI_EXT_CAP_ID_SRIOV);
         ctrl = pci_conf_read16(sbdf, pos + PCI_SRIOV_CTRL);
         num_vf = pci_conf_read16(sbdf, pos + PCI_SRIOV_NUM_VF);
         offset = pci_conf_read16(sbdf, pos + PCI_SRIOV_VF_OFFSET);
