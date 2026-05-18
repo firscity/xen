@@ -847,6 +847,7 @@ int vpci_init_header(struct pci_dev *pdev)
         return -EOPNOTSUPP;
     }
 
+    pci_fixup_bars();
     /*
      * Setup a handler for the command register.
      *
