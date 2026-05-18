@@ -1304,7 +1304,7 @@ void __init add_discovered_pci_devices(void)
     pcidevs_unlock();
 }
 
-static void __init cf_check reserve_bar_range(struct pci_dev *pdev, uint8_t reg,
+static void cf_check reserve_bar_range(struct pci_dev *pdev, uint8_t reg,
                                               uint64_t addr, uint64_t size,
                                               bool is_64bit, bool prefetch)
 {
@@ -1313,7 +1313,7 @@ static void __init cf_check reserve_bar_range(struct pci_dev *pdev, uint8_t reg,
         pci_reserve_bar_range(pdev, addr, size, prefetch);
 }
 
-static void __init cf_check get_new_bar_addr(struct pci_dev *pdev, uint8_t reg,
+static void cf_check get_new_bar_addr(struct pci_dev *pdev, uint8_t reg,
                                              uint64_t addr, uint64_t size,
                                              bool is_64bit, bool prefetch)
 {
@@ -1338,7 +1338,7 @@ static void __init cf_check get_new_bar_addr(struct pci_dev *pdev, uint8_t reg,
     }
 }
 
-static int __init cf_check bars_iterate(struct pci_seg *pseg, void *arg)
+static int cf_check bars_iterate(struct pci_seg *pseg, void *arg)
 {
     struct pci_dev *pdev;
     unsigned int i, ret, num_bars = PCI_HEADER_NORMAL_NR_BARS;
@@ -1378,7 +1378,7 @@ static int __init cf_check bars_iterate(struct pci_seg *pseg, void *arg)
     return 0;
 }
 
-void __init pci_fixup_bars(void)
+void pci_fixup_bars(void)
 {
     pcidevs_lock();
     pci_segments_iterate(bars_iterate, reserve_bar_range);
