@@ -92,6 +92,11 @@ typedef union {
 
 #define is_hardware_domain(d) ((void)(d), true)
 
+#define PCI_SEG(sbdf)  (((sbdf) >> 16) & 0xffff)
+#define PCI_BUS(bdf)   (((bdf) >> 8) & 0xff)
+#define pci_is_hardware_domain(d, seg, bus) \
+    ((void)(d), (void)(seg), (void)(bus), true)
+
 #define has_vpci(d) true
 
 #define xzalloc(type) ((type *)calloc(1, sizeof(type)))
