@@ -319,7 +319,7 @@ pci_host_common_probe(struct dt_device_node *dev,
 
     err = pci_set_msi_base(bridge);
     if ( err )
-        goto err_child2;
+        printk(XENLOG_WARNING "No MSI support for bridge %pp\n", &bridge->dt_node->full_name);
 
     pci_add_host_bridge(bridge);
     pci_add_segment(bridge->segment);
@@ -333,9 +333,6 @@ pci_host_common_probe(struct dt_device_node *dev,
         dt_for_each_range(bridge->dt_node, add_bar_range, bridge);
 
     return bridge;
-
- err_child2:
-    xfree(bridge->child_cfg);
 
 err_child:
     xfree(bridge->cfg);
