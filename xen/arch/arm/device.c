@@ -50,7 +50,8 @@ int map_irq_to_domain(struct domain *d, unsigned int irq,
 }
 
 int map_range_to_domain(const struct dt_device_node *dev,
-                        uint32_t flags, uint64_t addr, uint64_t len, void *data)
+                                       uint32_t flags, uint64_t pci_addr,
+                                       uint64_t addr, uint64_t len, void *data)
 {
     struct map_range_data *mr_data = data;
     struct domain *d = mr_data->d;
@@ -319,7 +320,7 @@ int handle_device(struct domain *d, struct dt_device_node *dev, p2m_type_t p2mt,
             return res;
         }
 
-        res = map_range_to_domain(dev, 0, addr, size, &mr_data);
+        res = map_range_to_domain(dev, 0, 0, addr, size, &mr_data);
         if ( res )
             return res;
     }
